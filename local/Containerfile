@@ -1,0 +1,29 @@
+# Dockerfile/Containerfile for local LTX-2 training with Podman
+
+FROM python:3.10-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for python dependency management
+RUN pip install uv huggingface_hub
+
+# Set working directory
+WORKDIR /app/LTX-2
+
+# Copy repository code (Assuming building from root of repo)
+# If mounting code as volume, this might be optional or overwritten
+COPY . /app/LTX-2
+
+# Sync dependencies using uv
+RUN uv sync
+
+# Create directories for mount points to ensure they exist
+RUN mkdir -p /models /data/input /data/output
+
+# Set entrypoint to the python script
+ENTRYPOINT ["uv", "run", "python", "local/train_entrypoint.py"]
