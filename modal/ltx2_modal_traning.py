@@ -67,7 +67,7 @@ def build_image_env():
 # Define an image with dependencies and run the build function
 image = (
     modal.Image.debian_slim()
-    .apt_install("git", "wget")
+    .apt_install("git", "wget", "ffmpeg", "libavcodec-dev", "libavformat-dev", "libswscale-dev", "libavutil-dev")
     .pip_install("huggingface_hub", "uv")
     .env({"HF_TOKEN": os.environ.get("HF_TOKEN", "")}) # Pass token optionally if exists locally for build, or use secrets
     .run_function(
@@ -153,7 +153,8 @@ def _train_logic(
         "uv", "run", "python", "scripts/process_dataset.py", "dataset.json",
         "--resolution-buckets", resolution_buckets,
         "--model-path", ltx_model_path,
-        "--text-encoder-path", gemma_path
+        "--text-encoder-path", gemma_path,
+        "--output-dir", "preprocessed_data"
     ]
 
     if not no_audio:
@@ -201,15 +202,35 @@ def train_l4(resolution_buckets: str, config_content: str, caption_low_mem: bool
 def train_t4(resolution_buckets: str, config_content: str, caption_low_mem: bool, caption_gemini: str, no_audio: bool):
     _train_logic(resolution_buckets, config_content, caption_low_mem, caption_gemini, no_audio)
 
+@app.function()
+def build_only():
+    """
+    Utility function to trigger the image build without running training.
+    Usage: modal run modal/ltx2_modal_traning.py ::build_only
+    """
+    print("Image build verified successfully!")
+
 @app.local_entrypoint()
 def main(
-    config_file: str,
-    resolution_buckets: str,
+    config_file: str = None,
+    resolution_buckets: str = None,
     gpu_type: str = "H100",
     caption_low_mem: bool = False, 
     caption_gemini: str = None,
-    no_audio: bool = False
+    no_audio: bool = False,
+    build_only_flag: bool = False
 ):
+    if build_only_flag:
+        print("Running build_only mode...")
+        build_only.remote()
+        return
+
+    if not config_file:
+        raise ValueError("Argument '--config-file' is required for training.")
+    
+    if not resolution_buckets:
+        raise ValueError("Argument '--resolution-buckets' is required for training.")
+
     with open(config_file, "r") as f:
         config_content = f.read()
     

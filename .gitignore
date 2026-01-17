@@ -39,3 +39,15 @@ tmp
 *.png
 *.wav
 *.webp
+
+# LTX-2 Specific Directories
+outputs/
+preprocessed_data/
+models/
+videos/
+wandb/
+audio_latents/
+latents/
+conditions/
+reference_latents/
+dataset.json

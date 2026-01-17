@@ -29,13 +29,13 @@ modal volume create training-data
 You must upload your videos to a folder named `videos/` within the volume.
 Assuming you have your local videos in `./mymovies`:
 ```bash
-modal volume put training-data mymovies/* videos/
+for f mymovies/*; do modal volume put training-data "$f" videos/; done
 ```
 
 **3. (Optional) Upload Reference Videos for Video-to-Video:**
 If you plan to train using IC-LoRA (Video-to-Video), upload reference videos to `reference_videos/`:
 ```bash
-modal volume put training-data myreferences/* reference_videos/
+for f myreferences/*; do modal volume put training-data "$f" reference_videos/; done
 ```
 
 ### Configuration Files
@@ -44,6 +44,13 @@ We have prepared Modal-optimized templates in `packages/ltx-trainer/configs/`. C
 - **Standard**: `ltx2_av_lora_modal.yaml`
 - **Low Consumption (Low VRAM)**: `ltx2_av_lora_low_vram_modal.yaml`
 - **Video-to-Video**: `ltx2_v2v_ic_lora_modal.yaml`
+
+### Pre-building the Image (Optional)
+If you want to prepare the environment (download models, install dependencies) without starting a training run, you can use the `--build-only-flag`:
+```bash
+modal run modal/ltx2_modal_traning.py --build-only-flag
+```
+This is useful to cache the image and ensure everything is ready before launching a potentially expensive training job.
 
 ---
 
